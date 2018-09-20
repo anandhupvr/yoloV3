@@ -1,9 +1,9 @@
 class Bbox:
-	def __init__(self, xmin, ymin,xmax, ymax, cat=None):
-		self.xmin = xmin
-		self.xmax = xmax
-		self.ymin = ymin
-		self.ymax = ymax
+	def __init__(self, x_ax, w_ax,y_ax, h_ax, cat=None):
+		self.x_ax = x_ax
+		self.y_ax = y_ax
+		self.w_ax = w_ax
+		self.h_ax = h_ax
 		self.cat = cat
 
 	def __getitem__(self, key):
