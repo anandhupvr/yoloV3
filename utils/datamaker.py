@@ -7,7 +7,9 @@ from PIL import Image
 
 
 def get_data(config, root_dir='/dataset/'):
-
+    max_iou = -1
+    best_prior = -1
+    instance_count = 0
     x_batch = np.zeros(
         [config["BATCH_SIZE"],
          config["IMAGE_W"],
@@ -52,8 +54,12 @@ def get_data(config, root_dir='/dataset/'):
                 if iou > max_iou:
                     max_iou = iou
                     best_prior = i
-            print (max_iou)
-
+            y_batch[instance_count, grid_x, grid_y, best_prior, 0:4] = box
+            y_batch[instance_count, grid_x, grid_y, best_prior, 4] = 1
+            x_batch[instance_count, grid_x, grid_y, best_prior, 5:5 + config['CLASS']] = class_vector
+            x_batch[instance_count] = image
+        instance_count += 1 
+    
 def manip_image_and_label(image_file, objs, config):
     image = cv2.imread(image_file)
     h_, w_, c = image.shape
