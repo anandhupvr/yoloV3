@@ -15,6 +15,7 @@ def get_data(config, root_dir='/dataset/'):
          3], np.float32)
     anchors = [Bbox(0, 0, config["ANCHORS"][2 * i], config["ANCHORS"][2 * i + 1])
                for i in range(int((len(config["ANCHORS"])) / 2))]
+
     y_batch = np.zeros(
         [config["BATCH_SIZE"],
          config["GRID_H"],
@@ -45,13 +46,17 @@ def get_data(config, root_dir='/dataset/'):
             box = Bbox(0, 0, center_w, center_h)
             
 
-            print (grid_y, grid_x)
-            
+            for i in range(len(anchors)):
+                iou = util.compute_iou(anchors[i], box)
+
+                if iou > max_iou:
+                    max_iou = iou
+                    best_prior = i
+            print (max_iou)
 
 def manip_image_and_label(image_file, objs, config):
     image = cv2.imread(image_file)
     h_, w_, c = image.shape
-    print(w_, h_, c)
     image = cv2.resize(image, (config["IMAGE_H"], config["IMAGE_W"]))
     for obj in objs:
         # converting yolo to bbox
