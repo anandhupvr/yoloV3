@@ -21,6 +21,7 @@ def get_data(config, root_dir='/dataset/'):
 
     y_batch = np.zeros(
         [config["BATCH_SIZE"],
+         config["GRID_W"],
          config["GRID_H"],
          config["BOX"],
          4 + 1 + config["CLASS"]],
@@ -43,7 +44,6 @@ def get_data(config, root_dir='/dataset/'):
             center_w = center_w / (config["IMAGE_W"]/config["GRID_W"])
             center_h = center_h / (config["IMAGE_H"]/config["GRID_H"])
             print ("centerx = {} centery = {} centerw = {} centerh = {}".format(center_x, center_y, center_w, center_h))
-            input()
             grid_x = int(np.floor(center_x))
             grid_y = int(np.floor(center_y))
             bbox = [center_x, center_y, center_w, center_h]
@@ -57,11 +57,13 @@ def get_data(config, root_dir='/dataset/'):
                     max_iou = iou
                     best_prior = i
 
+
             y_batch[instance_count, grid_x, grid_y, best_prior, 0:4] = bbox
             y_batch[instance_count, grid_x, grid_y, best_prior, 4] = 1
             y_batch[instance_count, grid_x, grid_y, best_prior, 5:5+config['CLASS']] = class_vector
             x_batch[instance_count] = image
-        return x_batch, y_batch
+        instance_count += 1
+    return x_batch, y_batch
 
 def manip_image_and_label(image_file, objs, config):
     image = cv2.imread(image_file)
