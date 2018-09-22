@@ -9,4 +9,5 @@ from utils import datamaker
 
 
 config = p.getParams()
-datamaker.get_data(config) 
+images, labels = datamaker.get_data(config)
+print (images.shape)

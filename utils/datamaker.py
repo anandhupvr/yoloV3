@@ -7,9 +7,16 @@ from PIL import Image
 
 
 def get_data(config, root_dir='/dataset/'):
+<<<<<<< HEAD
+    instance_count = 0
+    max_iou = -1
+    best_prior = -1
+
+=======
     max_iou = -1
     best_prior = -1
     instance_count = 0
+>>>>>>> 9393e5067154908a8b6b8354b661307b43987691
     x_batch = np.zeros(
         [config["BATCH_SIZE"],
          config["IMAGE_W"],
@@ -41,7 +48,8 @@ def get_data(config, root_dir='/dataset/'):
 
             center_w = center_w / (config["IMAGE_W"]/config["GRID_W"])
             center_h = center_h / (config["IMAGE_H"]/config["GRID_H"])
-            # print ("centerx = {} centery = {} centerw = {} centerh = {}".format(center_x, center_y, center_w, center_h))
+            print ("centerx = {} centery = {} centerw = {} centerh = {}".format(center_x, center_y, center_w, center_h))
+            input()
             grid_x = int(np.floor(center_x))
             grid_y = int(np.floor(center_y))
             bbox = [center_x, center_y, center_w, center_h]
@@ -54,12 +62,22 @@ def get_data(config, root_dir='/dataset/'):
                 if iou > max_iou:
                     max_iou = iou
                     best_prior = i
+<<<<<<< HEAD
+
+            y_batch[instance_count, grid_x, grid_y, best_prior, 0:4] = bbox
+            y_batch[instance_count, grid_x, grid_y, best_prior, 4] = 1
+            y_batch[instance_count, grid_x, grid_y, best_prior, 5:5+config['CLASS']] = class_vector
+            x_batch[instance_count] = image
+        return x_batch, y_batch
+
+=======
             y_batch[instance_count, grid_x, grid_y, best_prior, 0:4] = box
             y_batch[instance_count, grid_x, grid_y, best_prior, 4] = 1
             x_batch[instance_count, grid_x, grid_y, best_prior, 5:5 + config['CLASS']] = class_vector
             x_batch[instance_count] = image
         instance_count += 1 
     
+>>>>>>> 9393e5067154908a8b6b8354b661307b43987691
 def manip_image_and_label(image_file, objs, config):
     image = cv2.imread(image_file)
     h_, w_, c = image.shape
