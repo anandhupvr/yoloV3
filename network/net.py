@@ -14,7 +14,7 @@ class Anet:
                 3])
 
     def space_to_depth_x2(x):
-        return tf.space_to_depth_x2(x, block_size=2)
+        return tf.space_to_depth(x, block_size=2)
 
     def network(self):
             # Layer 1
@@ -306,7 +306,7 @@ class Anet:
 
         # Layer 21
 
-        skip_connection = tf.layers.conv2d(
+        conv21 = tf.layers.conv2d(
             skip_connection,
             filters=64,
             kernel_size=[3, 3],
@@ -315,17 +315,19 @@ class Anet:
             activation=tf.nn.leaky_relu,
             name="conv_21")
         skip_connection = tf.layers.batch_normalization(
-            skip_connection,
+            conv21,
             name="norm_21")
-        skip_connection = tf.reshape(skip_connection,[self.config["BATCH_SIZE"],self.config["GRID_W"],self.config["GRID_H"],2048])
+        # skip_connection = space_to_depth_x2(skip_connection)
+        skip_connection = tf.space_to_depth(skip_connection, block_size=2)
 
         route = tf.concat(
             [skip_connection,
-             conv20])
+             conv20],
+             3)
 
         # Layer 22
 
-        conv23 = tf.layers.conv2d(
+        conv22 = tf.layers.conv2d(
             route,
             filters=1024,
             kernel_size=[3, 3],
@@ -333,13 +335,13 @@ class Anet:
             padding="same",
             activation=tf.nn.leaky_relu,
             name="conv_22")
-        conv23 = tf.layers.batch_normalization(
-            conv23,
-            name="norm_23")
+        conv22 = tf.layers.batch_normalization(
+            conv22,
+            name="norm_22")
 
         # Layer 23
         conv23 = tf.layers.conv2d(
-            conv23,
+            conv22,
             filters=self.config["BOX"] * (4 + 1 + self.config["CLASS"]),
             kernel_size=[1, 1],
             strides=(1, 1),
