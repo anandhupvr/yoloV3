@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from utils import util
 
 
 class Anet:
@@ -361,3 +362,4 @@ class Anet:
 
     def getX(self):
         return self.x
+    def load_weights()
