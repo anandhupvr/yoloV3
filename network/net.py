@@ -362,4 +362,3 @@ class Anet:
 
     def getX(self):
         return self.x
-    def load_weights()
