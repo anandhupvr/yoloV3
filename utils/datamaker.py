@@ -43,7 +43,7 @@ def get_data(config, root_dir='/dataset/'):
 
             center_w = center_w / (config["IMAGE_W"]/config["GRID_W"])
             center_h = center_h / (config["IMAGE_H"]/config["GRID_H"])
-            print ("centerx = {} centery = {} centerw = {} centerh = {}".format(center_x, center_y, center_w, center_h))
+            # print ("centerx = {} centery = {} centerw = {} centerh = {}".format(center_x, center_y, center_w, center_h))
             grid_x = int(np.floor(center_x))
             grid_y = int(np.floor(center_y))
             bbox = [center_x, center_y, center_w, center_h]
