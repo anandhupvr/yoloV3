@@ -359,6 +359,5 @@ class Anet:
                 4 + 1 + self.config["CLASS"]
             ])
         return output
-
     def getX(self):
         return self.x

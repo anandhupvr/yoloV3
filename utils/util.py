@@ -10,17 +10,17 @@ def convert_to_bbox(labels_all):
     return objs
 
 
-class weight_reader:
-    def __init__(self, weight_file):
-        self.offset = 4
-        self.all_weights = np.fromfile(weight_file)
+# class weight_reader:
+#     def __init__(self, weight_file):
+#         self.offset = 4
+#         self.all_weights = np.fromfile(weight_file)
 
-    def read_bytes(self, size):
-        self.offset = self.offset + size
-        return all_weights[self.offset - size:self.offset]
+#     def read_bytes(self, size):
+#         self.offset = self.offset + size
+#         return all_weights[self.offset - size:self.offset]
 
-    def reset(self):
-        self.offset = 4
+#     def reset(self):
+#         self.offset = 4
 
 def compute_iou(box1, box2):
 
