@@ -32,6 +32,7 @@ def get_data(config, root_dir='/dataset/'):
                            file[:-3] + "txt").readlines()
         labels_all = [labels_file[i] for i, l in enumerate(labels_file)]
         objs = util.convert_to_bbox(labels_all)
+        print (file)
         image, objs = manip_image_and_label(
             os.getcwd() + root_dir + "images/" + file, objs, config)
         for obj in objs:
@@ -49,7 +50,6 @@ def get_data(config, root_dir='/dataset/'):
             bbox = [center_x, center_y, center_w, center_h]
             box = Bbox(0, 0, center_w, center_h)
             
-
             for i in range(len(anchors)):
                 iou = util.compute_iou(anchors[i], box)
 
@@ -80,6 +80,8 @@ def manip_image_and_label(image_file, objs, config):
         obj.y_ax = (y_mid - h / 2)
         obj.w_ax = w
         obj.h_ax = h
+        print (obj.x_ax, obj.y_ax, obj.w_ax, obj.h_ax)
+        input()
         # manipulating label relative to resized image
         obj.x_ax = int(obj.x_ax * float(config['IMAGE_W']) / w_)
         obj.x_ax = max(min(obj.x_ax, config['IMAGE_W']), 0)
@@ -89,5 +91,7 @@ def manip_image_and_label(image_file, objs, config):
         obj.y_ax = max(min(obj.y_ax, config['IMAGE_H']), 0)
         obj.h_ax = int(obj.h_ax * float(config['IMAGE_H']) / h_)
         obj.h_ax = max(min(obj.h_ax, config['IMAGE_H']), 0)
+    print (obj.x_ax, obj.w_ax, obj.y_ax, obj.h_ax)
+    input()
 
     return image, objs
