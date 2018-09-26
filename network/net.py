@@ -14,8 +14,6 @@ class Anet:
                 config["IMAGE_H"],
                 3])
 
-    def space_to_depth_x2(x):
-        return tf.space_to_depth(x, block_size=2)
 
     def network(self):
             # Layer 1
@@ -349,6 +347,8 @@ class Anet:
             padding="same",
             activation=tf.nn.leaky_relu,
             name="conv_23")
+        print (conv23.shape)
+        input()
         output = tf.reshape(
             conv23,
             [
