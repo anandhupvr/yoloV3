@@ -39,7 +39,5 @@ with tf.Session() as sess:
 		loss = yolo_loss.loss(preds, config, y_batch)
 		train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 		sess.run(tf.global_variables_initializer())
-		tf.summary.FileWriter("./",sess.graph)
-		input()
 		sess.run(train_step, feed_dict={x:x_batch})
-		print("total loss : "+str(loss))
+		print("total loss : "+str(loss) + epochs + ": epochs")
