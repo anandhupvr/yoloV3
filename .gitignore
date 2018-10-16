@@ -2,3 +2,4 @@ __pycache__/*
 *pyc
 darknet53.conv.74
 dataset/
+yolov2-voc_100.weights

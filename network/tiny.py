@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from utils import util
 
 
 class Anet:
@@ -62,6 +61,10 @@ class Anet:
         x = tf.layers.batch_normalization(
             x,
             name="norm_6")
+        x = tf.nn.max_pool(x,
+            ksize=[1, 2, 2, 1],
+            strides=[1, 2, 2, 1],
+            padding="SAME")
 
         # Layer 7 - 8
 
@@ -77,8 +80,6 @@ class Anet:
             x = tf.layers.batch_normalization(
                 x,
                 name="norm_"+str(i+7))
-        print (x.shape)
-        input()
         output = tf.reshape(
             x,
             [
@@ -89,3 +90,5 @@ class Anet:
                 4 + 1 + self.config["CLASS"]
             ])
         return output
+    def getX(self):
+        return self.x

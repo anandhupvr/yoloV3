@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from utils import util
+# from utils import util
 
 
 class Anet:
@@ -357,42 +357,5 @@ class Anet:
                 4 + 1 + self.config["CLASS"]
             ])
         return output
-        
-    def weight_load(self, weights, var_list):
-        ptr = 0
-        i = 0
-        assign_ops = []
-        while i < len(var_list) - 1:
-                var1 = var_list[i]
-                var2 = var_list[i + 1]
-                if "conv" in var1.name.split("/")[-1]:
-                    if "norm" in var2.name.split("/")[-1]:
-                        gamma, beta, mean, var = var_list[i + 1:i + 5]
-                        batch_norm_vars = [beta, gamma, mean, var]
-                        for var in batch_norm_vars:
-                            shape = var.shape.as_list()
-                            num_params = np.prod(shape)
-                            var_weights = weights[ptr:ptr + num_params].reshape(shape)
-                            ptr += num_params
-                            asign_ops.append(tf.assign(var, var_weights, validate_shape=True))
-                        i += 4
-                    elif "conv" in var2.name.split("/")[-2]:
-                        bias = var2
-                        bias_shape = bias_shpae.as_list()
-                        bias_params - np.prod(bias_shape)
-                        bias_weights = weights[ptr:ptr + bias_params].reshape(bias_shape)
-                        ptr += bias_params
-                        assign_ops.append(tf.assign(bias, bias_weights, validate_shape=True))
-
-                        i += 1
-                    shape = var1.shape.as_list()
-                    num_params = np.prod(shape)
-
-                    var_weights = weights[ptr:ptr + num_params].reshape((shape[3], shape[2], shape[0], shape[1]))
-                    var_weights = np.transpose(var_weights, (2, 3, 1, 0))
-                    ptr += num_params
-                    assign_ops.append(tf.assign(var1, var_weights, validate_shape=True))
-                    i += 1
-        return assign_ops
     def getX(self):
         return self.x
