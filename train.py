@@ -28,9 +28,9 @@ preds = arch.network()
 
 x = arch.getX()
 epochs = 10
-for v in tf.trainable_variables():
-	print ( v)
-	input()
+# for v in tf.trainable_variables():
+# 	print ( v)
+# 	input()
 
 
 with tf.Session() as sess:
@@ -40,4 +40,4 @@ with tf.Session() as sess:
 		train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 		sess.run(tf.global_variables_initializer())
 		sess.run(train_step, feed_dict={x:x_batch})
-		print("total loss : "+str(loss) + epochs + ": epochs")
+		print("total loss : "+str(tf.Print(loss)) + str(epoch) + ": epochs")
