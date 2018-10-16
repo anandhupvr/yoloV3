@@ -8,6 +8,7 @@ import cv2
 from utils.datamaker import DataLoader
 from utils import loader
 import sys
+tf.reset_default_graph()
 
 
 config = p.getParams()
@@ -39,5 +40,7 @@ with tf.Session() as sess:
 		loss = yolo_loss.loss(preds, config, y_batch)
 		train_step = tf.train.AdamOptimizer(1e-4).minimize(loss)
 		sess.run(tf.global_variables_initializer())
+		writer = tf.summary.FileWriter('./graphs', sess.graph)
 		sess.run(train_step, feed_dict={x:x_batch})
-		print("total loss : "+str(sess.run(loss)) + str(epoch) + ": epochs")
+		ls_val = sess.run(loss, feed_dict={x:x_batch})
+		print("total loss : "+str(ls_val) + str(epoch) + ": epochs")
