@@ -99,50 +99,50 @@ class Darknet53(nn.Module):
 
 
 class YoloV3(nn.Module):
-	def __init__(self, input_channel, num_classes):
+	def __init__(self, num_classes):
 		super(YoloV3, self).__init__()
 
 		self.num_classes = num_classes
 		output_channel = 3*(self.num_classes + 5)
-		#route_1 : 256, 52, 52	
-		# route_2 : 512, 26, 26
-		# route_3 : 1024, 13, 13	
+		#route_1 : 256, 52, 52	  first layer
+		# route_2 : 512, 26, 26   middle layer
+		# route_3 : 1024, 13, 13  last layer	
+
 		# route_1, route_2, route_3 = Darknet53()
 		self.darknet53 = Darknet53()
 		# route_3 large
 		# # 3*(self.num_classes + 5) num_anchors * (num_classes + 5 (x,y,w, h), objectness?)
-		self.convl1 = ConvBlock(1024, 512, kernel_size=1)
+		self.convl1 = ConvBlock(1024, 512, kernel_size=1, padding=0)
 		self.convl2 = ConvBlock(512, 1024, kernel_size=3)
-		self.convl3 = ConvBlock(1024, 512, kernel_size=1)
+		self.convl3 = ConvBlock(1024, 512, kernel_size=1, padding=0)
 		self.convl4 = ConvBlock(512, 1024, kernel_size=3)
-		self.convl5 = ConvBlock(1024, 512, kernel_size=1)
+		self.convl5 = ConvBlock(1024, 512, kernel_size=1, padding=0)
 		self.convl_obj = ConvBlock(512, 1024, kernel_size=3)
 		self.convl_bbox =  nn.Conv2d(1024, output_channel,  1, bias=False)
 
 		# for route_2
-		self.convl_1x1 = ConvBlock(512, 256, kernel_size=1) # convl5
+		self.convl_1x1 = ConvBlock(512, 256, kernel_size=1, padding=0) # convl5
 		#upsample
-		self.up1 = nn.Upsample(2)
+		self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
 
 		# self.concat = torch.cat([self.up1, route_2], dim=-1)
-		self.convm1 = ConvBlock(512, 256, kernel_size=1)
+		self.convm1 = ConvBlock(768, 256, kernel_size=1, padding=0)
 		self.convm2 = ConvBlock(256, 512, kernel_size=3)
-		self.convm3 = ConvBlock(512, 256, kernel_size=1)
+		self.convm3 = ConvBlock(512, 256, kernel_size=1, padding=0)
 		self.convm4 = ConvBlock(256, 512, kernel_size=3)
-		self.convm5 = ConvBlock(512, 256, kernel_size=1)
+		self.convm5 = ConvBlock(512, 256, kernel_size=1, padding=0)
 		self.convm_obj = ConvBlock(256, 512, kernel_size=3)
 		self.convm_bbox = nn.Conv2d(512, output_channel, 1, bias=False)
 
-		self.convm_1x1 = ConvBlock(256, 128, kernel_size=1) # convm5
-		self.up2 = nn.Upsample(2)
+		self.convm_1x1 = ConvBlock(256, 128, kernel_size=1, padding=0) # convm5
 
 		# route_1
 		# self.concat2 = torch.cat([self.up2, route_1])
-		self.convs1 = ConvBlock(256, 128, kernel_size=1)
+		self.convs1 = ConvBlock(384, 128, kernel_size=1, padding=0)
 		self.convs2 = ConvBlock(128, 256, kernel_size=3)
-		self.convs3 = ConvBlock(256, 128, kernel_size=1)
+		self.convs3 = ConvBlock(256, 128, kernel_size=1, padding=0)
 		self.convs4 = ConvBlock(128, 256, kernel_size=3)
-		self.convs5 = ConvBlock(256, 128, kernel_size=1)
+		self.convs5 = ConvBlock(256, 128, kernel_size=1, padding=0)
 		self.convs_obj = ConvBlock(128, 256, kernel_size=3)
 		self.convs_bbox = nn.Conv2d(256, output_channel, 1, bias=False)		
 
@@ -158,11 +158,10 @@ class YoloV3(nn.Module):
 		lobj = self.convl_obj(x5)
 		lbbox = self.convl_bbox(lobj)
 
-		import pdb; pdb.set_trace()
 		x6 = self.convl_1x1(x5)
-		x7 = self.up1(x6)
+		x7 = self.up(x6)
 	
-		x = torch.cat([x7, feat[1]], dim=-1)
+		x = torch.cat([x7, feat[1]], dim=1)
 		x = self.convm1(x)
 		x = self.convm2(x)
 		x = self.convm3(x)
@@ -172,9 +171,9 @@ class YoloV3(nn.Module):
 		mbbox = self.convm_bbox(mobj)
 
 		x = self.convm_1x1(x)
-		x = self.up2(x)
+		x = self.up(x)
 
-		x = torch.cat([x, feat[0]])
+		x = torch.cat([x, feat[0]], dim=1)
 		x = self.convs1(x)
 		x = self.convs2(x)
 		x = self.convs3(x)
@@ -196,7 +195,7 @@ def test():
 
 	print(" ----------------")
 
-	yolov3 = YoloV3(0, 5)
+	yolov3 = YoloV3(5)
 	lbbox, mbbox, sbbox = yolov3(x)
 
 	print(f"lbbox : {lbbox.shape}")
