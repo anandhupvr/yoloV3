@@ -56,6 +56,7 @@ class YoloLoss(nn.Module):
 			)
 
 		# No object loss
+
 		no_object_loss = self.mse(
 						torch.flatten( (1-iobj) * predictions[...,9], start_dim=1),
 						torch.flatten( (1 -iobj) * target[..., 9], start_dim=1)
@@ -85,7 +86,60 @@ class YoloLoss(nn.Module):
 		# print(f"class_loss = {class_loss}")
 		return loss
 
+class Yolov3Loss(nn.Module):
+	def __init__(self, num_classes, num_anchors=3):
+		super().__init__()
 
+		self.mse = nn.MSELoss(reduction="sum")
+		self.bce = nn.BCEWithLogitsLoss(reduction="sum")
+		self.cross_entropy = nn.CrossEntropyLoss()
+		self.sigmoid = nn.Sigmoid()
+
+		self.num_classes = num_classes
+		self.num_anchors = num_anchors
+	
+		self.lambda_noobj = 10
+		self.lambda_coord = 10
+		self.lambda_obj = 1
+		self.lambda_class = 1
+
+
+	def forward(self, pred, target, anchor):
+		import pdb; pdb.set_trace()
+		obj = target[..., 0] == 1
+		noobj = target[..., 0] == 0
+
+		# No obj loss
+
+		no_object_loss = self.bce(
+			(pred[..., 0:1][noobj]), (target[..., 0:1][noobj])
+		)
+
+		# object loss
+
+		anchor = anchor.reshape(1, 3, 1, 1, 2)
+		box_pred = torch.cat([self.sigmoid(pred[..., 1:3]), torch.exp(pred[..., 3:5])* anchor], dim=-1)
+		ious = iou(box_pred[obj], target[..., 1:5][obj]).detach()
+		object_loss = self.mse(self.sigmoid(pred[..., 0:1][obj]), ious * target[..., 0:1][obj])
+
+		# localization loss (box)
+		pred[..., 1:3] = self.sigmoid(pred[..., 1:3]) # x, y
+		target[..., 3:5] = torch.log(
+			(1e-6 + target[..., 3:5] / anchor)
+		) # w, h
+		box_loss = self.mse(pred[..., 1:5][obj], target[..., 1:5][obj])
+
+		# class loss
+		class_loss = self.cross_entropy(
+			(pred[..., 5:][obj], (target[..., 5][obj].long()))
+		)
+
+		loss = (self.lambda_coord * box_loss
+				+ self.lambda_obj + object_loss
+				+ self.lambda_noobj + no_object_loss
+				+ self.lambda_class + class_loss
+		)
+		return loss
 
 def test():
 	target = torch.tensor([1, 0, 0, 0, 0, 2.5, 2, 3, 2, 1])
@@ -99,6 +153,13 @@ def test():
 	# target = torch.randn([1, 7, 7, 10], dtype=torch.float32)
 
 	out = loss(prede, targete)
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
 	test()
