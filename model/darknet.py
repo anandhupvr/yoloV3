@@ -182,8 +182,20 @@ class YoloV3(nn.Module):
 		sobj = self.convs_obj(x)
 		sbbox = self.convs_bbox(sobj)		
 
+		lbbox_scaled = lbbox.reshape(
+			lbbox.shape[0], 3, self.num_classes + 5, lbbox.shape[2], lbbox.shape[3]
+			).permute(0, 1, 3, 4, 2)
 
-		return lbbox, mbbox, sbbox
+		mbbox_scaled = mbbox.reshape(
+			mbbox.shape[0], 3, self.num_classes + 5, mbbox.shape[2], mbbox.shape[3]
+			).permute(0, 1, 3, 4, 2)
+
+		sbbox_scaled = sbbox.reshape(
+			sbbox.shape[0], 3, self.num_classes + 5, sbbox.shape[2], sbbox.shape[3]
+			).permute(0, 1, 3, 4, 2)
+		
+		return lbbox_scaled, mbbox_scaled, sbbox_scaled
+
 
 def test():
 	x = torch.randn((1, 3, 416, 416))
