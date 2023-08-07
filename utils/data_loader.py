@@ -7,13 +7,13 @@ import pandas as pd
 
 import torchvision.transforms as transforms
 
-from util import iou, nms, cells_to_bboxes, plot_image
+from utils.util import iou, nms, cells_to_bboxes, plot_image
 
 
 class CocoDataset(Dataset):
     def __init__(self, data_dir, annotation_file, anchors,
                  image_size=416, grid_sizes=[13, 26, 52],
-                 num_classes=5):
+                 num_classes=80):
         
         # self.data_frame = pd.read_csv(csv_file)
         self.data_dir = data_dir
@@ -57,6 +57,8 @@ class CocoDataset(Dataset):
         path = os.path.normpath(os.path.join(self.data_dir, self.image_list[idx]))
         image = self._load_image(path)
         bboxes = self._load_label(path)
+        if True:
+            image = self.transforms(image)
         # if True:
         #     size_w, size_h = image.size
         #     scale_x, scale_y = 416/size_w, 416/size_h
@@ -93,7 +95,7 @@ class CocoDataset(Dataset):
                     targets[scale_idx][anchor_on_scale, i, j, 0] = -1 # ignore prediction
 
 
-        return np.array(image), tuple(targets), path
+        return np.array(image), tuple(targets)
 
 
 def test():
