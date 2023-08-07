@@ -67,7 +67,6 @@ def iou(box1, box2, is_pred=True):
         return iou_score
 
 
-
 # Non-maximum suppression function to remove overlapping bounding boxes
 def nms(bboxes, iou_threshold, threshold):
     # Filter out bounding boxes with confidence below the threshold.
@@ -140,6 +139,7 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
     converted_bboxes = torch.cat((best_class, scores, x, y, w_h), dim=-1).reshape(BATCH_SIZE, num_anchors * S * S, 6)
     return converted_bboxes.tolist()
 
+
 def plot_image(image, boxes):
     """Plots predicted bounding boxes on the image"""
     cmap = plt.get_cmap("tab20b")
@@ -183,6 +183,8 @@ def plot_image(image, boxes):
         )
 
     plt.show()
+
+
 
 def test():
     target = torch.tensor([[2.5, 2, 3, 2], [2.5, 2, 3, 2]])
