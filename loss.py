@@ -87,7 +87,7 @@ class YoloLoss(nn.Module):
 		return loss
 
 class Yolov3Loss(nn.Module):
-	def __init__(self, num_classes, num_anchors=3):
+	def __init__(self):
 		super().__init__()
 
 		self.mse = nn.MSELoss(reduction="sum")
@@ -95,8 +95,7 @@ class Yolov3Loss(nn.Module):
 		self.cross_entropy = nn.CrossEntropyLoss()
 		self.sigmoid = nn.Sigmoid()
 
-		self.num_classes = num_classes
-		self.num_anchors = num_anchors
+
 	
 		self.lambda_noobj = 10
 		self.lambda_coord = 10
@@ -105,7 +104,6 @@ class Yolov3Loss(nn.Module):
 
 
 	def forward(self, pred, target, anchor):
-		import pdb; pdb.set_trace()
 		obj = target[..., 0] == 1
 		noobj = target[..., 0] == 0
 
@@ -116,11 +114,10 @@ class Yolov3Loss(nn.Module):
 		)
 
 		# object loss
-
 		anchor = anchor.reshape(1, 3, 1, 1, 2)
 		box_pred = torch.cat([self.sigmoid(pred[..., 1:3]), torch.exp(pred[..., 3:5])* anchor], dim=-1)
 		ious = iou(box_pred[obj], target[..., 1:5][obj]).detach()
-		object_loss = self.mse(self.sigmoid(pred[..., 0:1][obj]), ious * target[..., 0:1][obj])
+		object_loss = self.mse(self.sigmoid(pred[..., 0:1][obj]), ious.unsqueeze(1) * target[..., 0:1][obj])
 
 		# localization loss (box)
 		pred[..., 1:3] = self.sigmoid(pred[..., 1:3]) # x, y
@@ -131,7 +128,7 @@ class Yolov3Loss(nn.Module):
 
 		# class loss
 		class_loss = self.cross_entropy(
-			(pred[..., 5:][obj], (target[..., 5][obj].long()))
+			pred[..., 5:][obj], target[..., 5][obj].long()
 		)
 
 		loss = (self.lambda_coord * box_loss
