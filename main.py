@@ -1,11 +1,12 @@
 import torch
 from torch.utils.data import DataLoader, random_split
 import torch.optim as optim
+from tqdm import tqdm
 
 from model.darknet import YoloV3
 from loss import Yolov3Loss
-from utils.data_loader import CocoDataset
-
+from utils.data_loader import CocoDataset, VocDataset
+import numpy as np
 num_class = 80
 
 
@@ -18,6 +19,13 @@ ANCHORS = [
 
 data_dir = "./data/coco_minitrain_25k"
 train_annotation_file = 'train2017.txt'
+darknet53_weight_file = "/home/anandhu/Documents/works/yoloV3/weights/darknet53_weights_pytorch.pth"
+
+# VOC config
+voc_data_dir = "/home/anandhu/Documents/works/yoloV3/data/VOCdevkit/VOC2007/"
+voc_class = 20
+num_class = voc_class
+
 
 # def train(train_loader, model, criterion, optimizer, epoch, device):
 #     model.train()
@@ -47,17 +55,25 @@ train_annotation_file = 'train2017.txt'
 
 def main():
 
+    
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    anchors = torch.tensor(ANCHORS).to(device)
+
     model = YoloV3(num_class).to(device)
+
+    # init darknet53 weights
+    model.load_weights("/home/anandhu/Documents/works/yoloV3/darknet53.pth")
+
     optimizer = optim.Adam(
         model.parameters(), lr=1e-5, weight_decay=1e-4
     )
     criterion = Yolov3Loss()
 
-
     # create dataset and data loader
-    dataset = CocoDataset(data_dir, train_annotation_file, ANCHORS)
+    # dataset = CocoDataset(data_dir, train_annotation_file, ANCHORS)
+    dataset = VocDataset(voc_data_dir, voc_class, ANCHORS)
 
 	# Split dataset into train and test subsets
     train_ratio = 0.8
@@ -69,15 +85,17 @@ def main():
     batch_size = 8
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-
-    num_epochs = 10
+    
+    num_epochs = 151
 
     model.train()
+
+    # model.load_weights(darknet53_weight_file)
     running_loss = 0
     last_loss = 0
 
-    for epoch in range(num_epochs):
-        for batch_idx, (x, y) in enumerate(train_loader):
+    for epoch in tqdm(range(num_epochs), desc="Epochs"):
+        for batch_idx, (x, y) in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}", leave=False)):
             x = x.to(device)
             y0, y1, y2 = (y[0].to(device), y[1].to(device), y[2].to(device))
             
@@ -89,9 +107,9 @@ def main():
 
             # Compute the loss and its gradients
             loss = ( 
-                criterion(out[0], y0, ANCHORS[0])
-                + criterion(out[1], y1, ANCHORS[1])
-                + criterion(out[2], y2, ANCHORS[2])
+                criterion(out[0], y0, anchors[0])
+                + criterion(out[1], y1, anchors[1])
+                + criterion(out[2], y2, anchors[2])
                )
             loss.backward()
 
@@ -100,18 +118,17 @@ def main():
 
             running_loss += loss.item()
             
-            if batch_idx % 1000 == 999:
-                last_loss = running_loss / 1000
+            if batch_idx % 100 == 99:
+                last_loss = running_loss / 100
                 print(' batch {} loss: {} '.format(batch_idx + 1, last_loss))
-
-    if epoch + 1 in [100, 200, 300]:
-        checkpoint = {
-            'epoch':epoch + 1,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': running_loss
-        }
-        torch.save(checkpoint, f"checkpoint_{epoch+1}.pth")
+        if epoch + 1 in [25, 50, 75, 100, 150]:
+            checkpoint = {
+                'epoch':epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': running_loss
+            }
+            torch.save(checkpoint, f"checkpoint_{epoch+1}.pth")
 
 
 
