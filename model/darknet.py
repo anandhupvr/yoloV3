@@ -28,7 +28,6 @@ class ResidualBlock(nn.Module):
 	def forward(self, x):
 
 		residual = x
-		# import pdb; pdb.set_trace()
 		x = self.conv_batch1(x)
 		x = self.conv_batch2(x)
 
@@ -196,6 +195,11 @@ class YoloV3(nn.Module):
 		
 		return lbbox_scaled, mbbox_scaled, sbbox_scaled
 
+
+
+	def load_weights(self, darknet53_file):
+		self.darknet53.load_state_dict(torch.load(darknet53_file))
+		print("init darknet53 ......")
 
 def test():
 	x = torch.randn((1, 3, 416, 416))
