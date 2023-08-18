@@ -10,6 +10,8 @@ COCO_LABELS = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tra
  'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
 
+VOC_LABELS  = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 
+               'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
 # Defining a function to calculate Intersection over Union (IoU)
 def iou(box1, box2, is_pred=True):
     if is_pred:
@@ -140,18 +142,22 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
     return converted_bboxes.tolist()
 
 
-def plot_image(image, boxes):
+def plot_image(image, boxes, label):
     """Plots predicted bounding boxes on the image"""
     cmap = plt.get_cmap("tab20b")
-    class_labels = COCO_LABELS
+    if label == 'coco':
+        class_labels = COCO_LABELS
+    elif label == 'voc':
+        class_labels = VOC_LABELS
     colors = [cmap(i) for i in np.linspace(0, 1, len(class_labels))]
-    im = np.array(image)
-    height, width, _ = im.shape
+    image = np.array(image)
+    # image = image.permute(0, 2, 3, 1)[0]
+    height, width, _ = image.shape
 
     # Create figure and axes
     fig, ax = plt.subplots(1)
     # Display the image
-    ax.imshow(im)
+    ax.imshow(image)
 
     # box[0] is x midpoint, box[2] is width
     # box[1] is y midpoint, box[3] is height
@@ -159,10 +165,12 @@ def plot_image(image, boxes):
     # Create a Rectangle patch
     for box in boxes:
         assert len(box) == 6, "box should contain class pred, confidence, x, y, width, height"
+        # print(f'x : {box[2]*width}, y : {box[3]*height}, width : {box[4]*width}, height : {box[5]*height}')
         class_pred = box[0]
         box = box[2:]
         upper_left_x = box[0] - box[2] / 2
         upper_left_y = box[1] - box[3] / 2
+        # print(f'upper_left_x : {upper_left_x * width}, upper_left_y : {upper_left_y * height}')
         rect = patches.Rectangle(
             (upper_left_x * width, upper_left_y * height),
             box[2] * width,
