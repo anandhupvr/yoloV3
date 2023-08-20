@@ -27,31 +27,38 @@ voc_class = 20
 num_class = voc_class
 
 
-# def train(train_loader, model, criterion, optimizer, epoch, device):
-#     model.train()
+def train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device):
+    last_loss = 0 # batch loss
+    running_loss = 0
 
-#     for batch_idx, (x, y) in enumerate(train_loader):
-#         x = x.to(device)
-#         y0, y1, y2 = (y[0].to(device), y[1].to(device), y[2].to(device))
+    for batch_idx, (x, y) in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}", leave=False)):
+        x = x.to(device)
+        y0, y1, y2 = (y[0].to(device), y[1].to(device), y[2].to(device))
         
-#         # Zero your gradients for every batch!
-#         optimizer.zero_grad()
+        # Zero your gradients for every batch!
+        optimizer.zero_grad()
 
-#         # Make predictions for this batch
-#         out = model(x)
+        # Make predictions for this batch
+        out = model(x)
 
-#         # Compute the loss and its gradients
-#         loss = ( 
-#             criterion(out[0], y0, ANCHORS[0])
-#             + criterion(out[1], y1, ANCHORS[1])
-#             + criterion(out[2], y2, ANCHORS[2])
-#             )
-#         loss.backward()
+        # Compute the loss and its gradients
+        loss = ( 
+            criterion(out[0], y0, anchors[0])
+            + criterion(out[1], y1, anchors[1])
+            + criterion(out[2], y2, anchors[2])
+           )
+        loss.backward()
 
-#         # Adjust learning weights
-#         optimizer.step()
-        
+        # Adjust learning weights
+        optimizer.step()
 
+        running_loss += loss.item()
+
+        if (batch_idx % 100 == 99):
+            last_loss = running_loss / 100
+            print(' batch {} loss: {} '.format(batch_idx + 1, last_loss))            
+
+    return last_loss
 
 def main():
 
@@ -82,45 +89,40 @@ def main():
     test_size = dataset_size - train_size
     train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
-    batch_size = 8
+    batch_size = 32
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
     
     num_epochs = 151
-
-    model.train()
 
     # model.load_weights(darknet53_weight_file)
     running_loss = 0
     last_loss = 0
 
     for epoch in tqdm(range(num_epochs), desc="Epochs"):
-        for batch_idx, (x, y) in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}", leave=False)):
-            x = x.to(device)
-            y0, y1, y2 = (y[0].to(device), y[1].to(device), y[2].to(device))
-            
-            # Zero your gradients for every batch!
-            optimizer.zero_grad()
 
-            # Make predictions for this batch
-            out = model(x)
+        model.train()
 
-            # Compute the loss and its gradients
-            loss = ( 
-                criterion(out[0], y0, anchors[0])
-                + criterion(out[1], y1, anchors[1])
-                + criterion(out[2], y2, anchors[2])
-               )
-            loss.backward()
+        avg_loss = train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device)
 
-            # Adjust learning weights
-            optimizer.step()
+        model.eval()
+        running_vloss = 0
+        with torch.no_grad():
+            for batch_idx, (x, y) in enumerate(tqdm(test_loader, leave=False)):
+                x = x.to(device)
+                y0, y1, y2 = (y[0].to(device), y[1].to(device), y[2].to(device))
+                out = model(x)
+                vloss = ( 
+                    criterion(out[0], y0, anchors[0])
+                    + criterion(out[1], y1, anchors[1])
+                    + criterion(out[2], y2, anchors[2])
+                   )                
 
-            running_loss += loss.item()
-            
-            if batch_idx % 100 == 99:
-                last_loss = running_loss / 100
-                print(' batch {} loss: {} '.format(batch_idx + 1, last_loss))
+                running_vloss += vloss
+        avg_vloss = running_vloss / (epoch + 1)
+        print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+
+
         if epoch + 1 in [25, 50, 75, 100, 150]:
             checkpoint = {
                 'epoch':epoch + 1,
