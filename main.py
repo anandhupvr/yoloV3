@@ -7,6 +7,11 @@ from model.darknet import YoloV3
 from loss import Yolov3Loss
 from utils.data_loader import CocoDataset, VocDataset
 import numpy as np
+
+# PyTorch TensorBoard support
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
+
 num_class = 80
 
 
@@ -27,7 +32,7 @@ voc_class = 20
 num_class = voc_class
 
 
-def train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device):
+def train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device, tb_writer):
     last_loss = 0 # batch loss
     running_loss = 0
 
@@ -56,7 +61,10 @@ def train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device):
 
         if (batch_idx % 100 == 99):
             last_loss = running_loss / 100
-            print(' batch {} loss: {} '.format(batch_idx + 1, last_loss))            
+            print(' batch {} loss: {} '.format(batch_idx + 1, last_loss)) 
+            tb_x = epoch * len(train_loader) + batch_idx + 1
+            tb_writer.add_scalar('Loss/train', last_loss, tb_x)
+            running_loss = 0           
 
     return last_loss
 
@@ -89,11 +97,14 @@ def main():
     test_size = dataset_size - train_size
     train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
-    batch_size = 32
+    batch_size = 8
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
     
     num_epochs = 151
+
+    writer = SummaryWriter('runs/voc')
+
 
     # model.load_weights(darknet53_weight_file)
     running_loss = 0
@@ -103,7 +114,7 @@ def main():
 
         model.train()
 
-        avg_loss = train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device)
+        avg_loss = train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device, writer)
 
         model.eval()
         running_vloss = 0
@@ -121,6 +132,14 @@ def main():
                 running_vloss += vloss
         avg_vloss = running_vloss / (epoch + 1)
         print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+
+
+        # Log the running loss averaged per batch
+        # for both training and validation
+        writer.add_scalars('Training vs. Validation Loss',
+                        { 'Training' : avg_loss, 'Validation' : avg_vloss },
+                        epoch + 1)
+        writer.flush()
 
 
         if epoch + 1 in [25, 50, 75, 100, 150]:
