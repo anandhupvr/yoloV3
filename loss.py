@@ -104,6 +104,9 @@ class Yolov3Loss(nn.Module):
 
 
 	def forward(self, pred, target, anchor):
+		# pred[..., 0] - objectness
+		# pred[..., 1:5] - x, y, w, h    [sigmoid(x,y), exp(w, h)*anchor]
+		# pred[..., 5:] - 20 classes
 		obj = target[..., 0] == 1
 		noobj = target[..., 0] == 0
 
@@ -113,11 +116,20 @@ class Yolov3Loss(nn.Module):
 			(pred[..., 0:1][noobj]), (target[..., 0:1][noobj])
 		)
 
+		if torch.sum(obj) == 0:
+			loss = (0  # box loss
+					+ 0 # obj loss
+					+ self.lambda_noobj * no_object_loss # no obj loss
+					+ 0 # class loss
+			)
+			return loss
+
 		# object loss
 		anchor = anchor.reshape(1, 3, 1, 1, 2)
 		box_pred = torch.cat([self.sigmoid(pred[..., 1:3]), torch.exp(pred[..., 3:5])* anchor], dim=-1)
+		# box_true = torch.cat([target[..., 1:3], target[..., 3:5]], dim=-1)
 		ious = iou(box_pred[obj], target[..., 1:5][obj]).detach()
-		object_loss = self.mse(self.sigmoid(pred[..., 0:1][obj]), ious.unsqueeze(1) * target[..., 0:1][obj])
+		object_loss = self.bce( (pred[..., 0:1][obj]), (ious.unsqueeze(1) * target[..., 0:1][obj]) )
 
 		# localization loss (box)
 		pred[..., 1:3] = self.sigmoid(pred[..., 1:3]) # x, y
@@ -128,13 +140,13 @@ class Yolov3Loss(nn.Module):
 
 		# class loss
 		class_loss = self.cross_entropy(
-			pred[..., 5:][obj], target[..., 5][obj].long()
+			(pred[..., 5:][obj]), (target[..., 5][obj].long())
 		)
 
 		loss = (self.lambda_coord * box_loss
-				+ self.lambda_obj + object_loss
-				+ self.lambda_noobj + no_object_loss
-				+ self.lambda_class + class_loss
+				+ self.lambda_obj * object_loss
+				+ self.lambda_noobj * no_object_loss
+				+ self.lambda_class * class_loss
 		)
 		return loss
 
@@ -150,12 +162,6 @@ def test():
 	# target = torch.randn([1, 7, 7, 10], dtype=torch.float32)
 
 	out = loss(prede, targete)
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
