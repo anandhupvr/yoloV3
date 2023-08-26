@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from model.darknet import YoloV3
 from loss import Yolov3Loss
-from utils.data_loader import CocoDataset, VocDataset
+from utils.data_loader import CocoDataset, VocDataset, DogVsCatDataset
 import numpy as np
 
 # PyTorch TensorBoard support
@@ -31,6 +31,11 @@ voc_data_dir = "/home/anandhu/Documents/works/yoloV3/data/VOCdevkit/VOC2007/"
 voc_class = 20
 num_class = voc_class
 
+
+# Dog vs Cat
+data_dir = "/home/anandhu/Documents/works/yoloV3/data/dogVScat/"
+dc_class = 2
+num_class = dc_class
 
 def train_fn(train_loader, model, criterion, optimizer, epoch, anchors, device, tb_writer):
     last_loss = 0 # batch loss
@@ -88,7 +93,8 @@ def main():
 
     # create dataset and data loader
     # dataset = CocoDataset(data_dir, train_annotation_file, ANCHORS)
-    dataset = VocDataset(voc_data_dir, voc_class, ANCHORS)
+    # dataset = VocDataset(voc_data_dir, voc_class, ANCHORS)
+    dataset = DogVsCatDataset(data_dir, 2, ANCHORS)
 
 	# Split dataset into train and test subsets
     train_ratio = 0.8
@@ -142,7 +148,7 @@ def main():
         writer.flush()
 
 
-        if epoch + 1 in [25, 50, 75, 100, 150]:
+        if epoch + 1 in [100, 150, 175]:
             checkpoint = {
                 'epoch':epoch + 1,
                 'model_state_dict': model.state_dict(),
