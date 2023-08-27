@@ -129,7 +129,7 @@ class Yolov3Loss(nn.Module):
 		box_pred = torch.cat([self.sigmoid(pred[..., 1:3]), torch.exp(pred[..., 3:5])* anchor], dim=-1)
 		# box_true = torch.cat([target[..., 1:3], target[..., 3:5]], dim=-1)
 		ious = iou(box_pred[obj], target[..., 1:5][obj]).detach()
-		object_loss = self.bce( (pred[..., 0:1][obj]), (ious.unsqueeze(1) * target[..., 0:1][obj]) )
+		object_loss = self.mse( self.sigmoid(pred[..., 0:1][obj]), (ious.unsqueeze(1) * target[..., 0:1][obj]) )
 
 		# localization loss (box)
 		pred[..., 1:3] = self.sigmoid(pred[..., 1:3]) # x, y
